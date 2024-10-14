@@ -1,0 +1,13 @@
+./backend/backend/settings/development.py
+
+./client/node_modules
+dist
+jsdoc.json
+
+.gitignore
+.vscode
+.prettierignore
+.prettierrc
+.jsconfig.json
+.eslintignore
+.eslintrc.cjs

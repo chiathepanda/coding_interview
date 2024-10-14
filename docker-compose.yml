@@ -1,0 +1,66 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: django
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn backend.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_ENV=production
+    env_file:
+      - ./backend/.env.production
+    depends_on:
+      - db
+    networks:
+      - project-network
+
+  react:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: react
+    stdin_open: true
+    tty: true
+    ports:
+      - "3000:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./client:/app
+      - node_modules:/app/node_modules
+    working_dir: /app
+    command: npm start
+    networks:
+      - project-network
+
+  db:
+    image: mysql:8.0.39
+    container_name: mysql
+    env_file:
+      - ./.env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_DATABASE_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_NAME}
+      MYSQL_USER: ${MYSQL_DATABASE_USER}
+      MYSQL_PASSWORD: ${MYSQL_DATABASE_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - project-network
+
+volumes:
+  mysql_data:
+  node_modules:
+
+networks:
+  project-network:
+    driver: bridge
+    
