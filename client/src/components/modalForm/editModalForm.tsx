@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Formik, Form } from 'formik';
+import { Formik, Form, ErrorMessage } from 'formik';
 
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -8,23 +8,32 @@ import DialogActions from '@mui/material/DialogActions';
 import { Button, Typography } from '@mui/material';
 
 import renderFields from './renderFields';
-import LogoUpload from './LogoUpload';  // Import the new component
+import LogoUpload from './LogoUpload';
 import DeleteWarning from '../generic/warning';
-
-import { flattenKeys } from '../utils';
-
+import { useEnv } from '../../context/EnvContext';
 
 const EditFormModal = ({ isOpen, onClose, errorMessage, rowData, handleSubmit, fieldConfigs, formSchema, hasFileUpload, dropdownFieldValues }) => {
-  const [filePreview, setFilePreview] = useState(rowData && rowData.logo ? `${import.meta.env.VITE_API_URL}/${rowData.logo}` : "");
+  const API_URL = useEnv().baseUrl;
+  const [filePreview, setFilePreview] = useState(rowData && rowData.logo ? `${API_URL}/${rowData.logo}` : "");
   const [isEditWarningOpen, setIsEditWarningOpen] = useState(false);
   const isCreate = rowData == null;
 
   const initialValues = isCreate
     ? fieldConfigs.reduce((acc, field) => {
-      acc[field.name] = null;
-      return flattenKeys(acc);
+      if (field.name.includes('.')) {
+        const [parent, child] = field.name.split('.');
+
+        if (!acc[parent]) {
+          acc[parent] = {};
+        }
+
+        acc[parent][child] = "";
+      } else {
+        acc[field.name] = "";
+      }
+      return acc;
     }, {})
-    : flattenKeys(rowData);
+    : rowData;
 
   const handleCancel = (dirty) => {
     if (dirty) {
@@ -56,12 +65,15 @@ const EditFormModal = ({ isOpen, onClose, errorMessage, rowData, handleSubmit, f
             <Form>
               {/* Conditionally insert the LogoUpload component */}
               {hasFileUpload && (
-                <LogoUpload
-                  name="logo"
-                  filePreview={filePreview}
-                  setFilePreview={setFilePreview}
-                  setFieldValue={setFieldValue}
-                />
+                <div key="logo">
+                  <LogoUpload
+                    name="logo"
+                    filePreview={filePreview}
+                    setFilePreview={setFilePreview}
+                    setFieldValue={setFieldValue}
+                  />
+                  <ErrorMessage name="logo" component="div" className="error" />
+                </div>
               )}
 
               {renderFields(setFieldValue, handleChange, handleBlur, values, fieldConfigs, dropdownFieldValues)}

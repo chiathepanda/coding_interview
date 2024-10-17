@@ -13,19 +13,19 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as EmployeesImport } from './routes/employees'
 import { Route as CafesImport } from './routes/cafes'
 
 // Create Virtual Routes
 
-const EmployeesLazyImport = createFileRoute('/employees')()
 const IndexLazyImport = createFileRoute('/')()
 
 // Create/Update Routes
 
-const EmployeesLazyRoute = EmployeesLazyImport.update({
+const EmployeesRoute = EmployeesImport.update({
   path: '/employees',
   getParentRoute: () => rootRoute,
-} as any).lazy(() => import('./routes/employees.lazy').then((d) => d.Route))
+} as any)
 
 const CafesRoute = CafesImport.update({
   path: '/cafes',
@@ -59,7 +59,7 @@ declare module '@tanstack/react-router' {
       id: '/employees'
       path: '/employees'
       fullPath: '/employees'
-      preLoaderRoute: typeof EmployeesLazyImport
+      preLoaderRoute: typeof EmployeesImport
       parentRoute: typeof rootRoute
     }
   }
@@ -70,20 +70,20 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/cafes': typeof CafesRoute
-  '/employees': typeof EmployeesLazyRoute
+  '/employees': typeof EmployeesRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/cafes': typeof CafesRoute
-  '/employees': typeof EmployeesLazyRoute
+  '/employees': typeof EmployeesRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexLazyRoute
   '/cafes': typeof CafesRoute
-  '/employees': typeof EmployeesLazyRoute
+  '/employees': typeof EmployeesRoute
 }
 
 export interface FileRouteTypes {
@@ -98,13 +98,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   CafesRoute: typeof CafesRoute
-  EmployeesLazyRoute: typeof EmployeesLazyRoute
+  EmployeesRoute: typeof EmployeesRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   CafesRoute: CafesRoute,
-  EmployeesLazyRoute: EmployeesLazyRoute,
+  EmployeesRoute: EmployeesRoute,
 }
 
 export const routeTree = rootRoute
@@ -131,7 +131,7 @@ export const routeTree = rootRoute
       "filePath": "cafes.tsx"
     },
     "/employees": {
-      "filePath": "employees.lazy.tsx"
+      "filePath": "employees.tsx"
     }
   }
 }

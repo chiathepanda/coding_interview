@@ -13,17 +13,17 @@ export const employeeSchema = Yup.object().shape({
     .required('Phone number is required'),
   gender: Yup.string()
     .oneOf(['male', 'female'], 'Gender is required')
-    .required(),
+    .required("Gender is required"),
   cafe_relation: Yup.object().shape({
+    cafe_id: Yup.string().nullable(),
     start_date: Yup.string()
-      .matches(
-        /^\d{4}-\d{2}-\d{2}$/,
-        'Date must be in the format YYYY-MM-DD'
-      ),
-    cafe_id: Yup.string().nullable().when('start_date', {
-      is: (start_date) => !!start_date,
-      then: (schema) => schema.required('Cafe ID is required when Start Date is filled'),
-      otherwise: (schema) => schema.nullable(),
-    }),
+      .nullable()
+      .test('start-date-conditional', 'Start date must be filled when Cafe is filled', function (value) {
+        const { cafe_id, start_date } = this.parent;
+        if ((cafe_id == null && start_date == null) || (cafe_id && start_date)) {
+          return true;
+        }
+        return false;
+      }),
   }),
 });

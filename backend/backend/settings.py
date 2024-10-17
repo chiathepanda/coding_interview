@@ -20,14 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-egx+93jqrefa%sf8nlv+eo*^mfln4_ik1a8^amn(j0ao%oot9p'
-
+# +gght&+!xh3qwg&fto%9f*6ouy$gi&$0s$44wa=x%^rgno_gp)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
-
-if DEBUG:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-else:
-    ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
 
 # Application definition
 
@@ -60,13 +55,15 @@ MIDDLEWARE = [
 # CORS_ALLOW_ALL_ORIGINS = True
 
 if DEBUG:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
     CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://192.168.56.1:3000'
 ]
 else:
-    CORS_ALLOWED_ORIGINS = os.getenv('CORS_DJANGO_ALLOWED_HOSTS', '').split(',')
-print(CORS_ALLOWED_ORIGINS)
+    ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
+    CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
 
 CORS_ALLOW_HEADERS = [
     'Content-Type',
@@ -99,12 +96,15 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME':  os.getenv('MYSQL_DATABASE_NAME', 'astekproject'),
-        'USER': os.getenv('MYSQL_DATABASE_USER', 'root'),
-        'PASSWORD': os.getenv('MYSQL_DATABASE_PASSWORD', '123456'),
+        'NAME':  os.getenv('MYSQL_DATABASE', 'astekproject'),
+        'USER': os.getenv('MYSQL_USER', 'root'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD', '123456'),
         'HOST': os.getenv('DATABASE_HOST', 'localhost'),   
         'PORT': os.getenv('DATABASE_PORT', '3306'),   
-        'OPTIONS': {   
+        'OPTIONS': {  
+            # 'ssl': {                                        
+            #     'ca': os.getenv('MYSQL_SSL_CA'),           
+            # },                                                 
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"   
         }   
     }

@@ -1,6 +1,3 @@
-./backend/backend/settings/development.py
-
-./client/node_modules
 dist
 jsdoc.json
 

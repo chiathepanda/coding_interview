@@ -8,7 +8,7 @@ backend/media/img/*
 *.pot
 *.py[cod]
 *.sqlite3
-*.env
+
 .env
 venv/
 
@@ -45,3 +45,6 @@ logs/
 # Ignore temporary files
 *.tmp
 *.bak
+
+# SSL
+./ssl/*

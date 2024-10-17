@@ -2,14 +2,22 @@
 
 set -e
 
-DB_PORT=${DATABASE_PORT:-5432} 
+DB_PORT=${DATABASE_PORT:-3306} 
 DB_HOST=${DATABASE_HOST:-db}
 
 python manage.py collectstatic --noinput
-# Wait for the database
+
+# Wait for the database service to be ready
 echo "Waiting for database"
-while ! nc -z $DB_HOST $DB_PORT; do
-  sleep 1
+MAX_TRIES=60
+TRIES=0
+while ! mysqladmin ping -h"$DB_HOST" --silent; do
+    TRIES=$((TRIES+1))
+    if [ "$TRIES" -ge "$MAX_TRIES" ]; then
+        echo "MySQL service not available.  exiting."
+        exit 1
+    fi
+    sleep 1
 done
 
 # Run Migrations

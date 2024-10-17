@@ -1,0 +1,40 @@
+# Ignore Python dependencies
+venv
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.db
+
+# Ignore local environment variables and other secret files
+.env
+*.env
+
+# Ignore static and media files (optional, if collected externally)
+staticfiles
+media
+
+# Ignore build artifacts and logs
+build
+dist
+*.log
+*.sqlite3
+*.swp
+
+# Ignore bytecode and cache files
+*.py[cod]
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+.eggs/
+.coverage
+.cache
+
+# Ignore Docker-related files
+docker-compose.override.yml
+Dockerfile.*
+
+# Ignore editor or OS-generated files
+.DS_Store
+*.swp

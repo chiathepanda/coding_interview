@@ -4,7 +4,7 @@ import uuid
 from django.db import models
 from django.forms import ValidationError
 
-from backend.models import TimeStampMixin
+from backend.models import TimeStampMixin, UpperCaseCharField
 from employee.models import Employee
     
 class Cafe(TimeStampMixin):
@@ -12,7 +12,7 @@ class Cafe(TimeStampMixin):
     name = models.CharField(null=False, blank=False, max_length=255)
     description = models.CharField(null=False, blank=False, max_length=256)
     logo = models.ImageField(upload_to='img/cafe_logos/', null=True, blank=True)
-    location = models.CharField(null=False, blank=False, max_length=255)
+    location =UpperCaseCharField(null=False, blank=False, max_length=255)
     
     def __str__(self):
         return f"{self.name} {self.location}, {self.id}"

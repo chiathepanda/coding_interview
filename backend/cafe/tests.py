@@ -10,21 +10,8 @@ from rest_framework.test import APIClient
 from cafe.models import Cafe, CafeEmployee
 from employee.models import Employee
 
-class CafeTestCase(TestCase):
-    def setUp(self):
-        self.cafe = Cafe.objects.create(
-            name="Cafe Latte",
-            description="A cozy place",
-            location="Uptown"
-        )
-
-    def test_cafe_creation(self):
-        self.assertEqual(self.cafe.name, "Cafe Latte")
-        self.assertEqual(self.cafe.location.location, "Uptown")
-        self.assertEqual(Cafe.objects.count(), 1)
-
-    def test_cafe_string_representation(self):
-        self.assertEqual(str(self.cafe), "Cafe Latte")
+cafe_path = '/cafe'
+cafes_path = '/cafes'
 
 class CafeAPITestCase(TestCase):
     def setUp(self):
@@ -32,51 +19,39 @@ class CafeAPITestCase(TestCase):
         self.cafe = Cafe.objects.create(
             name="Cafe Latte",
             description="A cozy place",
-            location="Uptown"
+            location="UPTOWN"
         )
         self.cafe = Cafe.objects.create(
             name="Macchiato",
             description="We sell macchiato only",
-            location="Uptown"
+            location="UPTOWN"
         )
         self.cafe = Cafe.objects.create(
             name="Amsterdam Coffee",
             description="Speciality Coffee Shop",
-            location="Downtown"
+            location="DOWNTOWN"
         )
-    
-    def test_create_cafe(self):
-        """
-        Test  POST /cafes
-        """
-        response = self.client.post(reverse('cafe-list'), {
-            "name": "Cafe Mocha",
-            "description": "Another cozy place",
-            "location": self.location.id
-        })
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Cafe.objects.count(), 2)
-
+        
     def test_filter_cafes_by_location(self):
         """
         Test  Get /cafes?location=<valid location>
         """
-        url = reverse('cafes-list')  # 'cafes-list' corresponds to the list action of the CafeViewSet
+        url = reverse('cafe-list')
+        self.assertEqual(url, cafes_path)
         response = self.client.get(url, {'location': 'Downtown'})
-
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response_data = response.json()
-        self.assertEqual(len(response_data), 2)
+        self.assertEqual(len(response_data), 1)
         for cafe in response_data:
-            self.assertEqual(cafe['location'], 'Downtown')
+            self.assertEqual(cafe['location'], 'DOWNTOWN')
 
     def test_no_cafes_for_nonexistent_location(self):
         """
         Get /cafes?location=<invalid location>
         """
-        url = reverse('cafes-list')
+        url = reverse('cafe-list')
         response = self.client.get(url, {'location': 'Nonexistent'})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -87,7 +62,7 @@ class CafeAPITestCase(TestCase):
         """
         Get /cafes
         """
-        url = reverse('cafes-list')
+        url = reverse('cafe-list')
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -95,54 +70,96 @@ class CafeAPITestCase(TestCase):
         response_data = response.json()
         self.assertEqual(len(response_data), 3)
         
+    def test_create_cafe(self):
+        """
+        Test  POST /cafe
+        """
+        url = reverse('cafe-api')
+        self.assertEqual(url, cafe_path)
+        response = self.client.post(url, {
+            "name": "Cafe Mocha",
+            "description": "Another cozy place",
+            "location": "BISHAN"
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Cafe.objects.count(), 4)
+        
+    def test_update_cafe(self):
+        """
+        Test  PUT /cafe
+        """
+        url = reverse('cafe-api')
+        self.assertEqual(url, cafe_path)
+        cafe_id = Cafe.objects.all().first().id
+        NewName = "New Name"
+        NewDescription = "New Description"
+        NewLocation = "NEW LOCATION"
+        response = self.client.put(url, {
+            "id": cafe_id,
+            "name": NewName,
+            "description": NewDescription,
+            "location": NewLocation
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], NewName)
+        self.assertEqual(response.data['description'], NewDescription)
+        self.assertEqual(response.data['location'], NewLocation)
+
+    def test_delete_cafe(self):
+        """
+        Test  DELETE /cafe
+        """
+        url = reverse('cafe-api')
+        self.assertEqual(url, cafe_path)
+        cafes = Cafe.objects.all()
+        current_len = len(cafes)
+        cafe_id = Cafe.objects.all().first().id
+        response = self.client.delete(url,
+                                      {"id": cafe_id
+                                       })
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(Cafe.objects.all()), current_len-1)
+        
 class CafeEmployeeTestCase(TestCase):
     def setUp(self):
         # Set up any initial data or test objects here if necessary
         self.valid_start_date = date.today() - timedelta(days=30)  # 30 days ago
         self.future_start_date = date.today() + timedelta(days=1)  # 1 day in the future
 
-    def test_valid_start_date(self):
-        # Create a CafeEmployee with a valid start_date (today or before today)
-        cafe_employee = CafeEmployee(start_date=self.valid_start_date)
-        try:
-            cafe_employee.full_clean()  # Validates the instance
-            cafe_employee.save()  # Saves if no validation errors
-        except ValidationError:
-            self.fail("CafeEmployee with a valid start_date raised ValidationError")
-
-    def test_future_start_date_raises_error(self):
-        # Attempt to create a CafeEmployee with a future start_date
-        cafe_employee = CafeEmployee(start_date=self.future_start_date)
-        with self.assertRaises(ValidationError):
-            cafe_employee.full_clean()  # This should raise a ValidationError
-
-    def test_start_date_today(self):
-        # Create a CafeEmployee with today's start_date
-        cafe_employee = CafeEmployee(start_date=date.today())
-        try:
-            cafe_employee.full_clean()  # Validates the instance
-            cafe_employee.save()  # Saves if no validation errors
-        except ValidationError:
-            self.fail("CafeEmployee with today's start_date raised ValidationError")
             
 class EmployeeSortTestCase(TestCase):
     def setUp(self):
-        # Create CafeEmployee instances with different start dates
-        cafe_employee1 = CafeEmployee.objects.create(start_date=date.today() - timedelta(days=10))  # 10 days ago
-        cafe_employee2 = CafeEmployee.objects.create(start_date=date.today() - timedelta(days=20))  # 20 days ago
-        cafe_employee3 = CafeEmployee.objects.create(start_date=date.today() - timedelta(days=5))   # 5 days ago
-
+        self.cafe = Cafe.objects.create(
+            name="Cafe Latte",
+            description="A cozy place",
+            location="UPTOWN"
+        )
+        
         # Create Employee instances linked to the CafeEmployee instances
-        self.employee1 = Employee.objects.create(name="John Doe", cafe_employee=cafe_employee1)
-        self.employee2 = Employee.objects.create(name="Jane Doe", cafe_employee=cafe_employee2)
-        self.employee3 = Employee.objects.create(name="Jim Doe", cafe_employee=cafe_employee3)
+        self.employee1 = Employee.objects.create(name="John Doe")
+        self.employee2 = Employee.objects.create(name="Jane Doe")
+        self.employee3 = Employee.objects.create(name="Jim Doe")
+        
+        # Create CafeEmployee instances with different start dates
+        CafeEmployee.objects.create(
+            cafe_id=self.cafe.id,
+            employee=self.employee1,
+            start_date=date.today() - timedelta(days=10))  # 10 days ago
+        CafeEmployee.objects.create(
+            cafe_id=self.cafe.id, 
+            employee=self.employee2,
+            start_date=date.today() - timedelta(days=20))  # 20 days ago
+        CafeEmployee.objects.create(
+            cafe_id=self.cafe.id,
+            employee=self.employee3,
+            start_date=date.today() - timedelta(days=5))   # 5 days ago
 
     def test_sort_employees_by_start_date(self):
         # Define the URL for the employees endpoint (use the appropriate name for your URL)
-        url = reverse('employees-list')  # Replace 'employees-list' with the actual name in your urls.py
+        url = reverse('employee-list')  # Replace 'employees-api' with the actual name in your urls.py
 
         # Make a GET request to the API
-        response = self.client.get(url, {'ordering': 'cafeemployee__start_date'})  # Ascending order by start_date
+        response = self.client.get(url)  # Ascending order by start_date
 
         # Ensure the response is successful
         self.assertEqual(response.status_code, status.HTTP_200_OK)

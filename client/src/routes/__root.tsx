@@ -1,11 +1,14 @@
 import React from 'react';
-import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
+import { CatchBoundary, createRootRoute, Link, Outlet, useLocation } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import { AppBar, Toolbar, Button, Divider } from '@mui/material';
 
+
 export const Route = createRootRoute({
-  component: () => (
-    <>
+  component: () => {
+    const location = useLocation();
+
+    return (<>
       <AppBar position="static" color="default">
         <Toolbar>
           <Button component={Link} to="/" className="[&.active]:font-bold" color="inherit" >
@@ -22,9 +25,14 @@ export const Route = createRootRoute({
 
       <Divider sx={{ my: 2 }} />
 
-      <Outlet />
+      <CatchBoundary
+        getResetKey={() => location.pathname}
+        onCatch={(error) => console.error(error)}
+      >
+        <Outlet />
+      </CatchBoundary>
 
       <TanStackRouterDevtools />
-    </>
-  ),
+    </>)
+  }
 });

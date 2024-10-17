@@ -30,7 +30,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
                 'start_date': cafe_employee.start_date
             }
         except CafeEmployee.DoesNotExist:
-            return None
+            return {
+                'cafe_id': None,
+                'name': None,
+                'start_date': None
+            }
         
     def get_days_worked(self, obj):
         if hasattr(obj, 'cafeemployee'):

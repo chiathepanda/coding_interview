@@ -56,7 +56,7 @@ const GridTemplate = ({ queryKey, model, rowData, colDefs, hooks, fieldConfigs, 
       setIsEditModalOpen(false);
       queryClient.invalidateQueries({ queryKey: [queryKey] });
     } catch (error) {
-      console.error(error.message);
+      setErrorMessage(error.message);
     }
   };
 
@@ -130,8 +130,11 @@ const GridTemplate = ({ queryKey, model, rowData, colDefs, hooks, fieldConfigs, 
               pagination: true,
               onGridReady: function (params) {
                 params.api.sizeColumnsToFit();
+
                 window.addEventListener('resize', () => {
-                  params.api.sizeColumnsToFit();
+                  if (!params.api.isDestroyed()) {
+                    params.api.sizeColumnsToFit();
+                  }
                 });
               }
             }

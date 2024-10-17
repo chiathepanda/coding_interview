@@ -9,6 +9,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from .models import Cafe
+from .models import Employee
 from .serializers import CafeSerializer
 
 class CafeViewSet(viewsets.ViewSet):
@@ -40,37 +41,38 @@ class CafeViewSet(viewsets.ViewSet):
     # PUT /cafe
     @action(detail=False, methods=['put'])
     def update_cafe(self, request, pk=None):
-        data = request.data.copy()
-        cafe_id = request.data.get('id')
-        cafe_logo = request.data.get('logo')
-        if not cafe_id:
-            return Response({'error': 'Cafe ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try: 
+            data = request.data.copy()
+            cafe_id = request.data.get('id')
+            cafe_logo = request.data.get('logo')
+            if not cafe_id:
+                return Response({'error': 'Cafe ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            cafe = get_object_or_404(Cafe, pk=cafe_id)
             
-        cafe = get_object_or_404(Cafe, pk=cafe_id)
-        
-                # If a logo already exists, delete the image file from storage
-        if not cafe_logo and cafe.logo:
-            logo_path = cafe.logo.path
-            if default_storage.exists(logo_path):
-                default_storage.delete(logo_path)
-            data['logo'] = None
-        
-        serializer = CafeSerializer(cafe, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # If a logo already exists, delete the image file from storage
+            if not cafe_logo and cafe.logo:
+                logo_path = cafe.logo.path
+                if default_storage.exists(logo_path):
+                    default_storage.delete(logo_path)
+                data['logo'] = None
+            
+            serializer = CafeSerializer(cafe, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+        except Exception as e:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # DELETE /cafe 
     @action(detail=False, methods=['delete'])
     def delete_cafe(self, request, pk=None):
-        cafe_id = request.data.get('id')
+        cafe_id = request.data if type(request.data) == str else request.data.get('id')
         if not cafe_id:
             return Response({'error': 'Cafe ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        cafe = get_object_or_404(Cafe, pk=cafe_id)
-
         try:
+            cafe = get_object_or_404(Cafe, pk=cafe_id)
+       
             cafe.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except IntegrityError as e:

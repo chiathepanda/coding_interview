@@ -16,14 +16,18 @@ class EmployeeViewSet(viewsets.ViewSet):
     
     def list(self, request):
         location_name = request.GET.get('location')
-        if location_name:
-            employees = Employee.objects.filter(location__location__icontains=location_name)
+        cafe_id = request.GET.get('cafe_id')
+        
+        if location_name or cafe_id:
+            if location_name:
+                employees = Employee.objects.filter(location__location__icontains=location_name)
+            if cafe_id:
+                employees = Employee.objects.filter(cafeemployee__cafe_id=cafe_id)
         else:
             employees = Employee.objects.all()
         
         employees = employees.order_by(
-            F('cafeemployee').asc(nulls_last=True),  
-            'cafeemployee__start_date'
+            F('cafeemployee__start_date').asc(nulls_last=True)
             )
         
         serializer = EmployeeSerializer(employees, many=True)
@@ -42,25 +46,31 @@ class EmployeeViewSet(viewsets.ViewSet):
                 cafe_relation = request.data.get('cafe_relation')
                 
                 if cafe_relation:
-                    cafe_id = cafe_relation['cafe_id']
-                    start_date = cafe_relation['start_date']
+                    cafe_id = cafe_relation.get('cafe_id')
+                    start_date = cafe_relation.get('start_date')
                     
-                    if not cafe_id or not start_date:
-                        return Response(
-                            {"error": "Both 'cafe_id' and 'start_date' must be provided in 'cafe_relation'."},
-                            status=status.HTTP_400_BAD_REQUEST
+                    cafe_id = None if cafe_id == "" else cafe_id
+                    start_date = None if start_date == "" else start_date
+                    
+                    if cafe_id is not None and start_date is None:
+                        raise ValueError("Cafe must be provided since 'start_date' was provided in 'cafe_relation'.")
+
+                    filtered = Cafe.objects.filter(id=cafe_id)
+                        
+                    if cafe_id is not None and not filtered.exists():
+                        raise ValueError("The specified 'cafe_id' does not exist.")
+                    
+                    if len(filtered) > 0:
+                        CafeEmployee.objects.update_or_create(
+                            employee=employee,
+                            defaults={'cafe_id': cafe_id,
+                                    "start_date": start_date}
                         )
-                    
-                    if not Cafe.objects.filter(id=cafe_id).exists():
-                        return Response({"error": "The specified 'cafe_id' does not exist."}, status=status.HTTP_404_NOT_FOUND)
-                    
-                    CafeEmployee.objects.update_or_create(
-                        employee=employee,
-                        defaults={'cafe_id': cafe_id,
-                                  "start_date": start_date}
-                    )
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
         except Exception as e:
-            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -72,9 +82,14 @@ class EmployeeViewSet(viewsets.ViewSet):
             with transaction.atomic():
                 employee_id = request.data.get('id')
                 cafe_relation = request.data.get('cafe_relation')
+                cafe_relation = None if cafe_relation == "" else cafe_relation
+                cafe_id = None
                 if cafe_relation:
                     cafe_id = cafe_relation['cafe_id']
                     start_date = cafe_relation['start_date']
+                    
+                    cafe_id = None if cafe_id == "" else cafe_id
+                    start_date = None if start_date == "" else start_date
 
                 if not employee_id:
                     return Response(
@@ -96,13 +111,15 @@ class EmployeeViewSet(viewsets.ViewSet):
                     
                 # Handle the cafe relation, use first() since it's unique to employee
                 existing_relation = CafeEmployee.objects.filter(employee=employee).first()
-                if not cafe_relation and existing_relation:
+                if not cafe_relation and existing_relation is not None:
                     # If no cafe relation is provided, remove the existing relation if it exists
                     existing_relation.delete()
-                elif cafe_relation and not Cafe.objects.filter(id=cafe_id).exists():
+                elif cafe_relation is not None and not Cafe.objects.filter(id=cafe_id).exists():
                     return Response({"error": "The specified cafe_id does not exist."}, status=status.HTTP_400_BAD_REQUEST)
-                elif cafe_relation and (existing_relation.cafe_id != getattr(existing_relation, 'cafe_id') or \
-                    existing_relation.start_date != getattr(existing_relation, 'start_date')):
+                elif cafe_relation is not None and not existing_relation or \
+                (existing_relation is not None and \
+                 (cafe_id != getattr(existing_relation, 'cafe_id') or \
+                    start_date != getattr(existing_relation, 'start_date'))):
                     CafeEmployee.objects.update_or_create(
                         employee=employee,  # Lookup field
                         defaults={
@@ -121,7 +138,8 @@ class EmployeeViewSet(viewsets.ViewSet):
     def delete_employee(self, request):
         try:
             with transaction.atomic():
-                employee = get_object_or_404(Employee, pk=request.data)
+                delete_id = request.data if type(request.data) == str else request.data.get('id', None)
+                employee = get_object_or_404(Employee, pk=delete_id)
 
                 employee.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)

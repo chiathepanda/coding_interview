@@ -1,12 +1,14 @@
 import React from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import GridTemplate from '../components/generic/gridTemplate';
-import { useFetchCafes } from '../hooks/cafe/useFetchCafes';
-import { addCafe, editCafe, deleteCafe } from '../api/cafes';
 
+import { createFileRoute, Link } from '@tanstack/react-router';
+
+import GridTemplate from '../components/generic/gridTemplate';
+
+import { addCafe, editCafe, deleteCafe } from '../api/cafes';
 import { cafeFieldConfigs } from '../formConfigs/cafeFieldConfigs';
 import { cafeSchema } from '../../validation/schemas/cafeSchema';
 
+import { useFetchCafes } from '../hooks/cafe/useFetchCafes';
 
 export const Route = createFileRoute('/cafes')({
   component: Cafes,
@@ -40,7 +42,7 @@ function Cafes() {
       field: 'employees',
       headerName: 'Employees',
       cellRenderer: (params) => {
-        return params.data.employees == 0 ? 0 : <Link to="/employees">{params.data.employees}</Link>;
+        return params.data.employees == 0 ? 0 : <Link to={params.data.employees > 0 ? `/employees?cafe_id=${params.data.id}` : ""}>{params.data.employees}</Link>;
       },
     },
 

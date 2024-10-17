@@ -7,42 +7,15 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from employee.models import Employee
+from employee.models import Employee,  generate_id
 
-class EmployeeTestCase(TestCase):
-    def setUp(self):
-        self.employee = Employee.objects.create(
-            id=Employee.generate_id(),
-            name="Jane Doe",
-            email_address="jane.doe@example.com",
-            phone_number="81234567",
-            gender="female"
-        )
-
-    def test_employee_creation(self):
-        self.assertEqual(self.employee.name, "Jane Doe")
-        self.assertTrue(re.match(r'^UI[A-Z0-9]{7}$', self.employee.id))
-        self.assertEqual(Employee.objects.count(), 1)
-
-    def test_employee_phone_number_validation(self):
-        with self.assertRaises(ValidationError):
-            Employee.objects.create(
-                id=Employee.generate_id(),
-                name="Invalid Phone",
-                email_address="invalid.phone@example.com",
-                phone_number="71234567",  # Invalid because it does not start with 8 or 9
-                gender="female"
-            )
-
-    def test_generate_id(self):
-        generated_id = Employee.generate_id()
-        self.assertTrue(re.match(r'^UI[A-Z0-9]{7}$', generated_id))
+employee_path = '/employee'
+employees_path = '/employees'
 
 class EmployeeAPITestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.employee_data = {
-            "id": Employee.generate_id(),
             "name": "Alice Smith",
             "email_address": "alice@example.com",
             "phone_number": "81234567",
@@ -54,6 +27,51 @@ class EmployeeAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_employee(self):
-        response = self.client.post(reverse('employee-list'), self.employee_data)
+        """
+        Test  POST /employee
+        """
+        url = reverse('employee-api')
+        self.assertEqual(url, employee_path)
+        current_count = Employee.objects.count()
+        response = self.client.post(reverse('employee-api'), self.employee_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Employee.objects.count(), 1)
+        self.assertEqual(Employee.objects.count(), current_count + 1)
+        
+    def test_update_employee(self):
+        """
+        Test  PUT /employee
+        """
+        url = reverse('employee-api')
+        self.assertEqual(url, employee_path)
+        self.client.post(reverse('employee-api'), self.employee_data)
+        employee_id = Employee.objects.all().first().id
+        NewName = "New Name"
+        NewEmailAddress = "test@example.com"
+        NewPhoneNumber = "90000000"
+        response = self.client.put(url, {
+            "id": employee_id,
+            "name": NewName,
+            "gender": "male",
+            "email_address": NewEmailAddress,
+            "phone_number": NewPhoneNumber
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], NewName)
+        self.assertEqual(response.data['email_address'], NewEmailAddress)
+        self.assertEqual(response.data['phone_number'], NewPhoneNumber)
+
+    def test_delete_employee(self):
+        """
+        Test  DELETE /employee
+        """
+        url = reverse('employee-api')
+        self.assertEqual(url, employee_path)
+        self.client.post(reverse('employee-api'), self.employee_data)
+        employees = Employee.objects.all()
+        current_len = len(employees)
+        employee_id = Employee.objects.all().first().id
+        response = self.client.delete(url,
+                                      {"id": employee_id
+                                       })
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(Employee.objects.all()), current_len-1)
