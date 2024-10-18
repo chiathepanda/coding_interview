@@ -7,7 +7,7 @@
 # Quick Start in *powershell*
 `git clone https://github.com/chiathepanda/coding_interview.git`
 
-`cd coding_interview`
+cd into coding_interview
 
 Build and then start the containers
 

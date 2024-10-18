@@ -9,7 +9,7 @@ backend/media/img/*
 *.py[cod]
 *.sqlite3
 
-.env
+# .env
 venv/
 
 *.pyc
@@ -24,8 +24,8 @@ build/
 dist/
 
 # Docker specific
-*.env
-.env
+# *.env
+# .env
 docker-compose.override.yml
 *.pid
 
