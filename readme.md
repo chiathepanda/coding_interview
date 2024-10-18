@@ -31,7 +31,7 @@ Login to docker via this cmd line and follow the instructions:
 
 `docker login`
 
-Pull the pre-built images from Docker Hub:
+Unncomment 2 image: lines in DockerFile and Pull the pre-built images from Docker Hub:
 
 `docker-compose pull`
 

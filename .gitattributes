@@ -1,0 +1,3 @@
+docker.sh text eol=lf
+vite.config.js text eol=lf
+vite.config.ts text eol=lf
